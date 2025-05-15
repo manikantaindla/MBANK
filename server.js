@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Use env port for Render
 
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
@@ -42,14 +42,12 @@ app.post('/signup', (req, res) => {
   res.send('Signup successful! <a href="/">Login here</a>');
 });
 
-//login
-// User login route
+// Login
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
   const credentials = `${username}:${password}`;
   const users = fs.readFileSync(usersFile, 'utf-8').split('\n');
 
-  // ❌ If trying to log in as admin from user page, reject it
   if (username.trim().toLowerCase() === 'admin') {
     return res.send(`
       <script>
@@ -59,7 +57,6 @@ app.post('/login', (req, res) => {
     `);
   }
 
-  // ✅ Normal user login
   if (users.includes(credentials)) {
     return res.send(`
       <script>
@@ -69,7 +66,6 @@ app.post('/login', (req, res) => {
     `);
   }
 
-  // ❌ Invalid user
   res.send(`
     <script>
       alert("Invalid credentials.");
@@ -78,9 +74,7 @@ app.post('/login', (req, res) => {
   `);
 });
 
-
-
-
+// Admin login
 app.post('/admin-login', (req, res) => {
   const { username, password } = req.body;
   const credentials = `${username}:${password}`;
@@ -102,11 +96,6 @@ app.post('/admin-login', (req, res) => {
     </script>
   `);
 });
-
-
-
-
-
 
 // ===== BANKING ROUTES =====
 
@@ -163,29 +152,20 @@ app.post('/transfer', (req, res) => {
   const { from, to, amount } = req.body;
   const data = getData();
 
-  if (!from || !to || isNaN(amount) || amount <= 0) {
-    return res.status(400).send("Invalid input.");
-  }
-
-  if (!data[from] || !data[to]) {
-    return res.status(404).send("User not found.");
-  }
-
+  if (!from || !to || isNaN(amount) || amount <= 0) return res.status(400).send("Invalid input.");
+  if (!data[from] || !data[to]) return res.status(404).send("User not found.");
   if (from === to) return res.status(400).send("Cannot transfer to self.");
   if (data[from].balance < amount) return res.status(400).send("Insufficient funds.");
 
-  // Update balances
   data[from].balance -= amount;
   data[to].balance += amount;
 
   const date = new Date().toISOString().split('T')[0];
 
-  // Log transactions
   data[from].transactions.push({ type: `transfer_to:${to}`, amount, date });
   data[to].transactions.push({ type: `transfer_from:${from}`, amount, date });
 
   saveData(data);
-
   res.send("Transfer successful.");
 });
 
@@ -198,7 +178,7 @@ app.get('/transactions', (req, res) => {
   res.json(data[username].transactions);
 });
 
-// Admin - list all users and balances
+// Admin - all users
 app.get('/admin', (req, res) => {
   const data = getData();
   const users = Object.keys(data).map(username => ({
@@ -208,9 +188,7 @@ app.get('/admin', (req, res) => {
   res.json(users);
 });
 
-const PORT = process.env.PORT || 3000;
-
+// Server start
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
-
