@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MBANK - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white transition-colors duration-300">
+
+  <!-- Navbar -->
+  <div class="bg-white dark:bg-gray-800 shadow p-4 flex justify-between items-center">
+    <!-- Left: Logo + Navigation -->
+    <div class="flex items-center gap-6 flex-wrap">
+      <div class="flex items-center gap-2">
+        <img src="Bank.jpg" alt="MBANK Logo" class="h-10 w-10 rounded-full shadow" />
+        <h1 class="text-xl font-bold text-indigo-600 dark:text-white">MBANK</h1>
+      </div>
+      <nav class="flex gap-4 text-sm md:text-base">
+        <a href="dashboard.html" class="hover:underline">Dashboard</a>
+        <a href="deposit.html" class="hover:underline">Deposit</a>
+        <a href="withdraw.html" class="hover:underline">Withdraw</a>
+        <a href="transactions.html" class="hover:underline">Transactions</a>
+        <a href="transfer.html" class="hover:underline">Transfer</a>
+        <a id="adminLink" href="#" class="hidden text-indigo-600 font-semibold hover:underline">Admin Panel</a>
+      </nav>
+    </div>
+
+    <!-- Right: Theme Toggle + Logout -->
+    <div class="flex items-center gap-4">
+      <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+        <span id="themeIcon">🌞</span>
+      </button>
+      <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="p-6 max-w-5xl mx-auto space-y-6">
+
+    <!-- Greeting and Username -->
+    <div class="flex justify-between items-center">
+      <div>
+        <h2 class="text-2xl font-semibold">Welcome, <span id="username"></span></h2>
+        <p id="greeting" class="text-gray-500 dark:text-gray-400 text-sm mt-1"></p>
+      </div>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-md">
+      <h3 class="text-lg font-bold mb-2">Current Balance</h3>
+      <p class="text-3xl text-green-600 dark:text-green-400 font-mono" id="balance">Loading...</p>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-md">
+      <h3 class="text-lg font-bold mb-4">Recent Activity</h3>
+      <ul id="recentActivity" class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+        <li>Loading transactions...</li>
+      </ul>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="bg-white dark:bg-gray-800 p-6 rounded shadow-md">
+      <h3 class="text-lg font-bold mb-4">Spending Overview</h3>
+      <div class="h-64">
+        <canvas id="transactionChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Script Section -->
+  <script>
+    const username = localStorage.getItem('bankUser');
+    if (!username) window.location.href = "index.html";
+    document.getElementById("username").innerText = username;
+
+    // Admin visibility
+    if (username === 'admin') {
+      const adminLink = document.getElementById("adminLink");
+      adminLink.classList.remove("hidden");
+      adminLink.href = "admin.html";
+    }
+
+    // Greeting
+    const hour = new Date().getHours();
+    const greeting = document.getElementById("greeting");
+    greeting.innerText = hour < 12 ? "Good Morning ☀️"
+                      : hour < 18 ? "Good Afternoon 🌤️"
+                      : "Good Evening 🌙";
+
+    // Balance
+    fetch(`/balance?username=${username}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("balance").innerText = data?.balance !== undefined
+          ? `₹${data.balance}`
+          : "₹0";
+      })
+      .catch(() => alert('Error loading balance'));
+
+    // Recent Transactions
+    fetch(`/transactions?username=${username}`)
+      .then(res => res.json())
+      .then(data => {
+        const list = document.getElementById("recentActivity");
+        list.innerHTML = "";
+        if (!data || data.length === 0) {
+          list.innerHTML = "<li>No recent activity</li>";
+        } else {
+          data.slice(0, 5).forEach(tx => {
+            const li = document.createElement("li");
+            li.textContent = `${tx.date} - ₹${tx.amount} (${tx.type})`;
+            list.appendChild(li);
+          });
+        }
+      })
+      .catch(() => {
+        document.getElementById("recentActivity").innerHTML = "<li>Error loading activity</li>";
+      });
+
+    // Logout
+    function logout() {
+      localStorage.removeItem('bankUser');
+      window.location.href = 'index.html';
+    }
+
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.classList.toggle('dark');
+      const isDark = html.classList.contains('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.getElementById("themeIcon").textContent = isDark ? "🌙" : "🌞";
+    }
+
+    // Apply saved theme
+    window.onload = () => {
+      const saved = localStorage.getItem('theme') || 'light';
+      document.documentElement.classList.toggle('dark', saved === 'dark');
+      document.getElementById("themeIcon").textContent = saved === 'dark' ? "🌙" : "🌞";
+
+      // Sample Chart
+      const ctx = document.getElementById('transactionChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            label: 'Amount (₹)',
+            data: [200, 450, 300, 500, 250, 600, 400],
+            backgroundColor: 'rgba(99, 102, 241, 0.2)',
+            borderColor: 'rgba(99, 102, 241, 1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#888'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#888'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: '#999'
+              }
+            }
+          }
+        }
+      });
+    };
+  </script>
+</body>
+</html>

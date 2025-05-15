@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Transactions</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+  <div class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-indigo-600">MyBank</h1>
+    <div class="space-x-4">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="deposit.html">Deposit</a>
+      <a href="withdraw.html">Withdraw</a>
+      <a href="transactions.html" class="text-indigo-600 font-semibold">Transactions</a>
+      <button onclick="logout()" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </div>
+
+  <div class="p-6 max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold mb-4">Transaction History</h2>
+    <table class="w-full bg-white rounded-lg shadow overflow-hidden">
+      <thead class="bg-indigo-100 text-indigo-800">
+        <tr>
+          <th class="p-3 text-left">Type</th>
+          <th class="p-3 text-left">Amount</th>
+          <th class="p-3 text-left">Date</th>
+        </tr>
+      </thead>
+      <tbody id="txnBody" class="divide-y divide-gray-100"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const username = localStorage.getItem('bankUser');
+    if (!username) window.location.href = "index.html";
+
+    fetch(`/transactions?username=${username}`)
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.getElementById('txnBody');
+        if (data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">No transactions found.</td></tr>`;
+          return;
+        }
+        data.reverse().forEach(txn => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-gray-50">
+              <td class="p-3 capitalize">${txn.type}</td>
+              <td class="p-3">₹${txn.amount}</td>
+              <td class="p-3">${txn.date}</td>
+            </tr>`;
+        });
+      });
+
+    function logout() {
+      localStorage.removeItem('bankUser');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

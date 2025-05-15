@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Deposit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+  <div class="bg-white shadow p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-indigo-600">MyBank</h1>
+    <div class="space-x-4">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="deposit.html" class="text-indigo-600 font-semibold">Deposit</a>
+      <a href="withdraw.html">Withdraw</a>
+      <a href="transactions.html">Transactions</a>
+      <button onclick="logout()" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </div>
+
+  <div class="p-6 max-w-md mx-auto">
+    <h2 class="text-2xl font-bold mb-4">Deposit Funds</h2>
+    <form id="depositForm" class="space-y-4">
+      <input type="number" name="amount" id="amount" placeholder="Enter amount" required
+             class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
+      <button type="submit"
+              class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition">Deposit</button>
+    </form>
+  </div>
+
+  <script>
+    const username = localStorage.getItem('bankUser');
+    if (!username) window.location.href = "index.html";
+
+    document.getElementById('depositForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('amount').value);
+
+      fetch('/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, amount })
+      }).then(res => res.text()).then(msg => {
+        alert(msg);
+        window.location.href = 'dashboard.html';
+      });
+    });
+
+    function logout() {
+      localStorage.removeItem('bankUser');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

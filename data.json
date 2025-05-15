@@ -1,0 +1,42 @@
+{
+  "Mani": {
+    "balance": 391,
+    "transactions": [
+      {
+        "type": "deposit",
+        "amount": 1000,
+        "date": "2025-05-14"
+      },
+      {
+        "type": "withdraw",
+        "amount": 500,
+        "date": "2025-05-14"
+      },
+      {
+        "type": "withdraw",
+        "amount": 59,
+        "date": "2025-05-14"
+      },
+      {
+        "type": "transfer_to:ney",
+        "amount": 50,
+        "date": "2025-05-14"
+      }
+    ]
+  },
+  "ney": {
+    "balance": 100050,
+    "transactions": [
+      {
+        "type": "deposit",
+        "amount": 100000,
+        "date": "2025-05-14"
+      },
+      {
+        "type": "transfer_from:Mani",
+        "amount": 50,
+        "date": "2025-05-14"
+      }
+    ]
+  }
+}
